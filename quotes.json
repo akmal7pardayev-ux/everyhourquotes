@@ -1,0 +1,62 @@
+{
+  "motivation": [
+    {"text": "The only way to do great work is to love what you do.", "author": "Steve Jobs"},
+    {"text": "Believe you can and you're halfway there.", "author": "Theodore Roosevelt"},
+    {"text": "The future belongs to those who believe in the beauty of their dreams.", "author": "Eleanor Roosevelt"},
+    {"text": "Don't watch the clock; do what it does. Keep going.", "author": "Sam Levenson"},
+    {"text": "Everything you've ever wanted is on the other side of fear.", "author": "George Addair"},
+    {"text": "It does not matter how slowly you go as long as you do not stop.", "author": "Confucius"},
+    {"text": "What you get by achieving your goals is not as important as what you become.", "author": "Zig Ziglar"},
+    {"text": "Act as if what you do makes a difference. It does.", "author": "William James"},
+    {"text": "The secret of getting ahead is getting started.", "author": "Mark Twain"},
+    {"text": "Success is not final, failure is not fatal: it is the courage to continue that counts.", "author": "Winston Churchill"}
+  ],
+  "wisdom": [
+    {"text": "The unexamined life is not worth living.", "author": "Socrates"},
+    {"text": "In the middle of difficulty lies opportunity.", "author": "Albert Einstein"},
+    {"text": "Knowing yourself is the beginning of all wisdom.", "author": "Aristotle"},
+    {"text": "Simplicity is the ultimate sophistication.", "author": "Leonardo da Vinci"},
+    {"text": "The only true wisdom is in knowing you know nothing.", "author": "Socrates"},
+    {"text": "It is during our darkest moments that we must focus to see the light.", "author": "Aristotle"},
+    {"text": "To understand everything is to forgive everything.", "author": "Buddha"},
+    {"text": "The journey of a thousand miles begins with one step.", "author": "Lao Tzu"},
+    {"text": "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", "author": "Aristotle"},
+    {"text": "The mind is everything. What you think you become.", "author": "Buddha"}
+  ],
+  "humor": [
+    {"text": "I'm on a whiskey diet. I've lost three days already.", "author": "Tommy Cooper"},
+    {"text": "Behind every great man is a woman rolling her eyes.", "author": "Jim Carrey"},
+    {"text": "I'm not arguing, I'm just explaining why I'm right.", "author": null},
+    {"text": "If at first you don't succeed, then skydiving definitely isn't for you.", "author": "Steven Wright"},
+    {"text": "Age is of no importance unless you're a cheese.", "author": "Luis Buñuel"},
+    {"text": "I find television very educating. Every time somebody turns on the set, I go into the other room and read a book.", "author": "Groucho Marx"},
+    {"text": "Never go to a doctor whose office plants have died.", "author": "Erma Bombeck"},
+    {"text": "My favorite machine at the gym is the vending machine.", "author": null},
+    {"text": "I'm not lazy, I'm on energy-saving mode.", "author": null},
+    {"text": "A balanced diet is a cookie in each hand.", "author": null}
+  ],
+  "life": [
+    {"text": "Life is what happens when you're busy making other plans.", "author": "John Lennon"},
+    {"text": "Get busy living or get busy dying.", "author": "Stephen King"},
+    {"text": "In the end, it's not the years in your life that count. It's the life in your years.", "author": "Abraham Lincoln"},
+    {"text": "The purpose of our lives is to be happy.", "author": "Dalai Lama"},
+    {"text": "Life is not measured by the number of breaths we take, but by the moments that take our breath away.", "author": "Maya Angelou"},
+    {"text": "Good friends, good books, and a sleepy conscience: this is the ideal life.", "author": "Mark Twain"},
+    {"text": "Live as if you were to die tomorrow. Learn as if you were to live forever.", "author": "Mahatma Gandhi"},
+    {"text": "The only impossible journey is the one you never begin.", "author": "Tony Robbins"},
+    {"text": "Not how long, but how well you have lived is the main thing.", "author": "Seneca"},
+    {"text": "To live is the rarest thing in the world. Most people exist, that is all.", "author": "Oscar Wilde"}
+  ],
+  "success": [
+    {"text": "The way to get started is to quit talking and begin doing.", "author": "Walt Disney"},
+    {"text": "Success is walking from failure to failure with no loss of enthusiasm.", "author": "Winston Churchill"},
+    {"text": "Opportunities don't happen. You create them.", "author": "Chris Grosser"},
+    {"text": "Don't be afraid to give up the good to go for the great.", "author": "John D. Rockefeller"},
+    {"text": "I find that the harder I work, the more luck I seem to have.", "author": "Thomas Jefferson"},
+    {"text": "The successful warrior is the average man, with laser-like focus.", "author": "Bruce Lee"},
+    {"text": "If you really look closely, most overnight successes took a long time.", "author": "Steve Jobs"},
+    {"text": "There is no substitute for hard work.", "author": "Thomas Edison"},
+    {"text": "Dream big. Work hard. Stay focused.", "author": null},
+    {"text": "Success usually comes to those who are too busy to be looking for it.", "author": "Henry David Thoreau"}
+  ]
+}

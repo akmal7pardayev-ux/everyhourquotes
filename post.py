@@ -1,3 +1,4 @@
+import datetime
 import io
 import json
 import os
@@ -11,83 +12,112 @@ import urllib.request
 from PIL import Image, ImageDraw, ImageFont
 
 
-FONT_PATHS = [
-    '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-    '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
-    '/usr/share/fonts/truetype/freefont/FreeSans.ttf',
-    '/System/Library/Fonts/Helvetica.ttc',
-    'C:\\Windows\\Fonts\\arial.ttf',
+FONT_NAME = 'Poppins'
+FONT_URLS = {
+    f'{FONT_NAME}-Regular.ttf': 'https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Regular.ttf',
+    f'{FONT_NAME}-Medium.ttf': 'https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Medium.ttf',
+    f'{FONT_NAME}-Bold.ttf': 'https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Bold.ttf',
+}
+
+ACCENT_COLORS = [
+    (255, 107, 107),
+    (72, 219, 251),
+    (255, 223, 0),
+    (155, 89, 255),
+    (46, 204, 113),
+    (255, 165, 0),
+    (0, 210, 211),
+    (255, 99, 132),
 ]
 
-FALLBACK_QUOTES = [
-    "Stay hungry, stay foolish. \u2014 Steve Jobs",
-    "The only limit is your mind.",
-    "Be the change you wish to see in the world. \u2014 Gandhi",
-    "Less talk, more action.",
-    "Dream big. Work hard. Stay focused.",
-    "Kindness is free, sprinkle it everywhere.",
-    "Focus on the good.",
-    "Make today count.",
-    "Simplicity is the ultimate sophistication.",
-    "Trust the process.",
-    "Act as if what you do makes a difference. It does.",
-    "Do what you love, love what you do.",
-    "Every moment is a fresh beginning.",
-    "Happiness is not a destination, it's a way of life.",
-    "In a world where you can be anything, be kind.",
-    "Success is not final, failure is not fatal: it is the courage to continue that counts.",
-    "Believe you can and you're halfway there.",
-    "It does not matter how slowly you go as long as you do not stop.",
-    "The future belongs to those who believe in the beauty of their dreams.",
-    "What you get by achieving your goals is not as important as what you become.",
+API_SOURCES = [
+    'https://zenquotes.io/api/random',
+    'https://api.quotable.io/random',
 ]
 
 
-def load_font(size):
-    for path in FONT_PATHS:
-        if os.path.exists(path):
-            return ImageFont.truetype(path, size)
+def _font_path(style):
+    for d in [os.path.dirname(__file__), '/tmp']:
+        p = os.path.join(d, f'{FONT_NAME}-{style}.ttf')
+        if os.path.exists(p):
+            return p
+    url = FONT_URLS.get(f'{FONT_NAME}-{style}.ttf')
+    if url:
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                dest = os.path.join('/tmp', f'{FONT_NAME}-{style}.ttf')
+                with open(dest, 'wb') as f:
+                    f.write(resp.read())
+                return dest
+        except Exception:
+            pass
+    return None
+
+
+def load_font(size, style='Regular'):
+    p = _font_path(style)
+    if p:
+        return ImageFont.truetype(p, size)
     return ImageFont.load_default()
 
 
-def generate_quote_image(quote_text, author=None):
+def create_gradient(w, h, c1, c2):
+    strip = Image.new('RGB', (1, h))
+    for y in range(h):
+        r = int(c1[0] + (c2[0] - c1[0]) * y / h)
+        g = int(c1[1] + (c2[1] - c1[1]) * y / h)
+        b = int(c1[2] + (c2[2] - c1[2]) * y / h)
+        strip.putpixel((0, y), (r, g, b))
+    return strip.resize((w, h), Image.Resampling.LANCZOS)
+
+
+def generate_quote_image(quote_text, author, accent):
     width, height = 1080, 1080
-    img = Image.new('RGB', (width, height), color=(18, 18, 30))
-    draw = ImageDraw.Draw(img)
+    bg = create_gradient(width, height, (10, 10, 24), (22, 20, 44))
+    draw = ImageDraw.Draw(bg)
 
-    font = load_font(52)
-    author_font = load_font(40)
+    quote_font = load_font(56, 'Bold')
+    author_font = load_font(40, 'Regular')
 
-    wrapper = textwrap.TextWrapper(width=28)
+    wrapper = textwrap.TextWrapper(width=26)
     lines = wrapper.wrap(quote_text)
 
-    total_h = len(lines) * 70
-    y = (height - total_h) // 2
+    total_h = len(lines) * 75
+    y = (height - total_h) // 2 - 40
 
     for line in lines:
-        bbox = draw.textbbox((0, 0), line, font=font)
+        bbox = draw.textbbox((0, 0), line, font=quote_font)
         x = (width - (bbox[2] - bbox[0])) // 2
-        draw.text((x, y), line, fill=(245, 245, 255), font=font)
-        y += 70
+        draw.text((x, y), line, fill=(245, 245, 255), font=quote_font)
+        y += 75
 
     if author:
-        author_text = f'\u2014 {author}'
-        bbox = draw.textbbox((0, 0), author_text, font=author_font)
+        y += 20
+        lw = 60
+        draw.rectangle([(width // 2 - lw // 2, y), (width // 2 + lw // 2, y + 3)], fill=accent)
+        y += 25
+        text = f'\u2014 {author}'
+        bbox = draw.textbbox((0, 0), text, font=author_font)
         x = (width - (bbox[2] - bbox[0])) // 2
-        draw.text((x, y + 30), author_text, fill=(160, 160, 180), font=author_font)
+        draw.text((x, y), text, fill=accent, font=author_font)
 
     buf = io.BytesIO()
-    img.save(buf, format='PNG')
+    bg.save(buf, format='PNG')
     buf.seek(0)
     return buf.getvalue()
 
 
+def load_local_quotes():
+    p = os.path.join(os.path.dirname(__file__), 'quotes.json')
+    if os.path.exists(p):
+        with open(p, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {}
+
+
 def fetch_quote():
-    sources = [
-        'https://zenquotes.io/api/random',
-        'https://api.quotable.io/random',
-    ]
-    for url in sources:
+    for url in API_SOURCES:
         try:
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
             with urllib.request.urlopen(req, timeout=10) as resp:
@@ -98,37 +128,42 @@ def fetch_quote():
                     return data['content'], data['author']
         except Exception:
             continue
-    quote = random.choice(FALLBACK_QUOTES)
-    if ' \u2014 ' in quote:
-        parts = quote.split(' \u2014 ', 1)
-        return parts[0].strip(), parts[1].strip()
-    return quote, None
+
+    quotes = load_local_quotes()
+    if quotes:
+        cats = list(quotes.keys())
+        cat = cats[datetime.datetime.now().weekday() % len(cats)]
+        pool = quotes.get(cat, [])
+        if pool:
+            pick = random.choice(pool)
+            return pick['text'], pick.get('author')
+
+    return 'Stay hungry, stay foolish.', 'Steve Jobs'
 
 
 def _build_multipart(fields, files, boundary):
     body = io.BytesIO()
-    for key, value in fields.items():
+    for k, v in fields.items():
         body.write(f'--{boundary}\r\n'.encode())
-        body.write(f'Content-Disposition: form-data; name="{key}"\r\n\r\n'.encode())
-        body.write(f'{value}\r\n'.encode())
-    for name, filename, content_type, data in files:
+        body.write(f'Content-Disposition: form-data; name="{k}"\r\n\r\n'.encode())
+        body.write(f'{v}\r\n'.encode())
+    for name, filename, ctype, data in files:
         body.write(f'--{boundary}\r\n'.encode())
         body.write(f'Content-Disposition: form-data; name="{name}"; filename="{filename}"\r\n'.encode())
-        body.write(f'Content-Type: {content_type}\r\n\r\n'.encode())
+        body.write(f'Content-Type: {ctype}\r\n\r\n'.encode())
         body.write(data)
         body.write(b'\r\n')
     body.write(f'--{boundary}--\r\n'.encode())
     return body.getvalue()
 
 
-def send_telegram_photo(bot_token, chat_id, photo_bytes):
+def send_telegram_photo(bot_token, chat_id, photo_bytes, caption=None):
     boundary = uuid.uuid4().hex
     url = f'https://api.telegram.org/bot{bot_token}/sendPhoto'
-    body = _build_multipart(
-        {'chat_id': chat_id},
-        [('photo', 'quote.png', 'image/png', photo_bytes)],
-        boundary,
-    )
+    fields = {'chat_id': chat_id}
+    if caption:
+        fields['caption'] = caption
+    body = _build_multipart(fields, [('photo', 'quote.png', 'image/png', photo_bytes)], boundary)
     req = urllib.request.Request(url, data=body)
     req.add_header('Content-Type', f'multipart/form-data; boundary={boundary}')
     with urllib.request.urlopen(req, timeout=15) as resp:
@@ -144,8 +179,10 @@ def main():
         sys.exit(1)
 
     quote_text, author = fetch_quote()
-    image_bytes = generate_quote_image(quote_text, author)
-    send_telegram_photo(bot_token, chat_id, image_bytes)
+    accent = random.choice(ACCENT_COLORS)
+    image_bytes = generate_quote_image(quote_text, author, accent)
+    caption = f'\u201c{quote_text}\u201d' + (f' \u2014 {author}' if author else '')
+    send_telegram_photo(bot_token, chat_id, image_bytes, caption=caption)
     print(f'Posted: {quote_text[:80]}...')
 
 
