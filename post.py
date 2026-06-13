@@ -1,11 +1,23 @@
+import io
 import json
 import os
 import random
 import sys
-import urllib.parse
-import urllib.request
+import textwrap
+import uuid
 import urllib.error
+import urllib.request
 
+from PIL import Image, ImageDraw, ImageFont
+
+
+FONT_PATHS = [
+    '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+    '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+    '/usr/share/fonts/truetype/freefont/FreeSans.ttf',
+    '/System/Library/Fonts/Helvetica.ttc',
+    'C:\\Windows\\Fonts\\arial.ttf',
+]
 
 FALLBACK_QUOTES = [
     "Stay hungry, stay foolish. \u2014 Steve Jobs",
@@ -31,6 +43,45 @@ FALLBACK_QUOTES = [
 ]
 
 
+def load_font(size):
+    for path in FONT_PATHS:
+        if os.path.exists(path):
+            return ImageFont.truetype(path, size)
+    return ImageFont.load_default()
+
+
+def generate_quote_image(quote_text, author=None):
+    width, height = 1080, 1080
+    img = Image.new('RGB', (width, height), color=(18, 18, 30))
+    draw = ImageDraw.Draw(img)
+
+    font = load_font(52)
+    author_font = load_font(40)
+
+    wrapper = textwrap.TextWrapper(width=28)
+    lines = wrapper.wrap(quote_text)
+
+    total_h = len(lines) * 70
+    y = (height - total_h) // 2
+
+    for line in lines:
+        bbox = draw.textbbox((0, 0), line, font=font)
+        x = (width - (bbox[2] - bbox[0])) // 2
+        draw.text((x, y), line, fill=(245, 245, 255), font=font)
+        y += 70
+
+    if author:
+        author_text = f'\u2014 {author}'
+        bbox = draw.textbbox((0, 0), author_text, font=author_font)
+        x = (width - (bbox[2] - bbox[0])) // 2
+        draw.text((x, y + 30), author_text, fill=(160, 160, 180), font=author_font)
+
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    buf.seek(0)
+    return buf.getvalue()
+
+
 def fetch_quote():
     sources = [
         'https://zenquotes.io/api/random',
@@ -42,22 +93,44 @@ def fetch_quote():
             with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode())
                 if isinstance(data, list) and data:
-                    return f'{data[0]["q"]} \u2014 {data[0]["a"]}'
+                    return data[0]['q'], data[0]['a']
                 elif isinstance(data, dict) and data.get('content'):
-                    return f'{data["content"]} \u2014 {data["author"]}'
+                    return data['content'], data['author']
         except Exception:
             continue
-    return random.choice(FALLBACK_QUOTES)
+    quote = random.choice(FALLBACK_QUOTES)
+    if ' \u2014 ' in quote:
+        parts = quote.split(' \u2014 ', 1)
+        return parts[0].strip(), parts[1].strip()
+    return quote, None
 
 
-def send_telegram(bot_token, chat_id, message):
-    url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
-    data = urllib.parse.urlencode({
-        'chat_id': chat_id,
-        'text': message,
-        'parse_mode': 'HTML',
-    }).encode()
-    req = urllib.request.Request(url, data=data, headers={'Content-Type': 'application/x-www-form-urlencoded'})
+def _build_multipart(fields, files, boundary):
+    body = io.BytesIO()
+    for key, value in fields.items():
+        body.write(f'--{boundary}\r\n'.encode())
+        body.write(f'Content-Disposition: form-data; name="{key}"\r\n\r\n'.encode())
+        body.write(f'{value}\r\n'.encode())
+    for name, filename, content_type, data in files:
+        body.write(f'--{boundary}\r\n'.encode())
+        body.write(f'Content-Disposition: form-data; name="{name}"; filename="{filename}"\r\n'.encode())
+        body.write(f'Content-Type: {content_type}\r\n\r\n'.encode())
+        body.write(data)
+        body.write(b'\r\n')
+    body.write(f'--{boundary}--\r\n'.encode())
+    return body.getvalue()
+
+
+def send_telegram_photo(bot_token, chat_id, photo_bytes):
+    boundary = uuid.uuid4().hex
+    url = f'https://api.telegram.org/bot{bot_token}/sendPhoto'
+    body = _build_multipart(
+        {'chat_id': chat_id},
+        [('photo', 'quote.png', 'image/png', photo_bytes)],
+        boundary,
+    )
+    req = urllib.request.Request(url, data=body)
+    req.add_header('Content-Type', f'multipart/form-data; boundary={boundary}')
     with urllib.request.urlopen(req, timeout=15) as resp:
         return json.loads(resp.read().decode())
 
@@ -67,12 +140,13 @@ def main():
     chat_id = os.environ.get('CHAT_ID')
 
     if not bot_token or not chat_id:
-        print("Missing BOT_TOKEN or CHAT_ID environment variables")
+        print('Missing BOT_TOKEN or CHAT_ID environment variables')
         sys.exit(1)
 
-    quote = fetch_quote()
-    send_telegram(bot_token, chat_id, quote)
-    print(f'Posted: {quote[:80]}...')
+    quote_text, author = fetch_quote()
+    image_bytes = generate_quote_image(quote_text, author)
+    send_telegram_photo(bot_token, chat_id, image_bytes)
+    print(f'Posted: {quote_text[:80]}...')
 
 
 if __name__ == '__main__':
